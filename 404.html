@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>Gone Fission</title>
+		<style type="text/css" mce_bogus="1">
+			table {margin:auto;}
+                </style>
+	</head>
+	<body>
+		<table>
+			<tr align="center"><td colspan="2"><h3>Gone Fission</h3><hr height="1px"/></td></tr>
+			<tr>
+				<td align="left">Generation: <span id="spanGen">0</span></td>
+				<td align="right">
+				 <button id="btnReset" onclick="resetGame();return true;" disabled="disabled">Reset</button>
+					<button id="btnHelp" onclick="help();return true;">What's this?</button>
+				</td>
+			</tr>
+			<tr align="center">
+				<td colspan="2"><canvas id="space" width="500" height="500" style="border: 1px solid; background-color: #eeeeee;">HTML5 required</canvas></td>
+			</tr>
+			<tr align="center">
+				<td colspan="2">&copy; May, 2011, lifegame@263.net</td>
+			</tr>
+		</table>
+	</body>
+	<script type="text/javascript">
+		var canvas = document.getElementById('space');
+		var context = canvas.getContext('2d');
+		var timerInterval = 10;	// ms
+		var cellWidth = 10;	// please ensure: cellWidth > 2
+		var cellXLen = 50;	// please ensure: cellWidth * cellXLen = 500
+		var cellYLen = 50;	// please ensure: cellWidth * cellYLen = 500
+		var cells = [];
+		var running = 0;
+		var generation = 0;
+		var reactionInterval = 500;
+		
+		function drawCell(x,y,state){
+			  var cx = x * cellWidth;
+			  var cy = y * cellWidth;
+				if(state != undefined){
+					context.fillStyle = ['gold', 'gold', 'gold', 'red'][state];
+					context.fillRect(cx, cy, cellWidth, cellWidth);
+					context.strokeStyle = 'DarkGoldenRod';
+					context.strokeRect(cx+1, cy+1, cellWidth-2, cellWidth-2);
+				}
+				else{
+					context.clearRect(cx, cy, cellWidth, cellWidth);
+				}
+		}
+		
+		
+		function setCell(x,y,state){
+			cells[[x,y]] = state;
+			drawCell(x, y, state);
+		}
+		
+		function explodeCell(x,y){
+				var neighbours = [], ns = [];
+				var currentState = cells[[x,y]];
+				neighbours[0] = [(x-1+cellXLen)%cellXLen, (y-1+cellYLen)%cellYLen];
+				neighbours[1] = [(x-1+cellXLen)%cellXLen, (y+1+cellYLen)%cellYLen];
+				neighbours[2] = [(x+cellXLen)%cellXLen, (y+1+cellYLen)%cellYLen];
+				neighbours[3] = [(x+cellXLen)%cellXLen, (y-1+cellYLen)%cellYLen];
+				neighbours[4] = [(x+1+cellXLen)%cellXLen, (y+1+cellYLen)%cellYLen];
+				neighbours[5] = [(x+1+cellXLen)%cellXLen, (y-1+cellYLen)%cellYLen];
+				neighbours[6] = [(x+1+cellXLen)%cellXLen, (y+cellYLen)%cellYLen];
+				neighbours[7] = [(x-1+cellXLen)%cellXLen, (y+cellYLen)%cellYLen];
+				for(var i=0;i<8;i++){
+				 var	state = cells[neighbours[i]];
+					if(state !== undefined) ns += neighbours[i];
+				}
+				if(currentState>=ns.length){
+					currentState-=ns.length;
+				}
+				setCell(x,y,currentState);
+				for (var i in ns){
+					var x = ns[i][0], y = ns[i][1];
+					running++;
+					setTimeout(function(){
+						incCell(x,y);
+						running--;
+					}, reactionInterval);
+				}
+		}
+		
+		function incCell(x,y){
+			var state = cells[[x,y]];
+				if(state !== undefined){
+					setCell(x,y,state+1);
+				}else{
+					setCell(x,y,0);
+					return;
+			 }
+			 explodeCell(x,y);
+			 spanGen.innerHTML = generation++;
+		}
+		
+		function loadGame(){
+			canvas.onmousedown = function(e){
+				if(running>0) return;
+				if(e.offsetX) {
+	                          x = e.offsetX;
+	                          y = e.offsetY;
+		                }
+		                else if(e.layerX) {
+		                  x = e.layerX;
+		                  y = e.layerY;
+		                }
+				x = Math.floor(x / cellWidth);
+				y = Math.floor(y / cellWidth);
+			 incCell(x,y);
+			}
+		}
+		
+		function resetGame(){
+			cells = [];
+			generation = 0;
+			spanGen.innerHTML = generation;
+		}
+		
+		function help(){
+			window.open("/README.md");
+		}
+			
+		window.addEventListener("load", loadGame, true);
+ </script>
+<html>
